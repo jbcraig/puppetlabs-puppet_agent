@@ -51,12 +51,24 @@ class puppet_agent::osfamily::solaris(
 
       $pkgrepo_dir = '/etc/puppetlabs/installer/solaris.repo'
 
+      # Make sure the pkg publishers are all available.  Broken
+      # publisher entries will stop the installation process.
+      # This must happen before removing any packages.
+      exec { 'puppet_agent ensure pkg publishers are available':
+        # command   => "pkgrepo remove -s '${pkgrepo_dir}' '*'",
+        command   => "pkg refresh",
+        path      => '/bin:/usr/bin:/sbin:/usr/sbin',
+        logoutput => 'on_failure',
+        notify    => Exec['puppet_agent remove existing repo'],
+      }
+
       exec { 'puppet_agent remove existing repo':
-        command   => "pkgrepo remove -s '${pkgrepo_dir}' '*'",
+        command   => "rm -rf '${pkgrepo_dir}'/'*'",
         path      => '/bin:/usr/bin:/sbin:/usr/sbin',
         onlyif    => "test -f ${pkgrepo_dir}/pkg5.repository",
         logoutput => 'on_failure',
         notify    => Exec['puppet_agent create repo'],
+        require   => Exec['puppet_agent ensure pkg publishers are available']
       }
 
       exec { 'puppet_agent create repo':
