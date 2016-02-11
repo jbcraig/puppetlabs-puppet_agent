@@ -94,6 +94,14 @@ class puppet_agent::osfamily::solaris(
         logoutput => 'on_failure',
       }
 
+      # Configure publisher and set origin to our newly minted repo
+      exec { 'puppet_agent configure publisher':
+        command   => "pkg set-publisher -G '*' -g file://${pkgrepo_dir} puppetlabs.com",
+        path      => '/bin:/usr/bin:/sbin:/usr/sbin',
+        require   => Exec['puppet_agent copy packages'],
+        logoutput => 'on_failure',
+      }
+
     }
     default: {
       fail("${::operatingsystem} ${::operatingsystemmajrelease} not supported")
